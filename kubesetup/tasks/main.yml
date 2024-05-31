@@ -9,9 +9,9 @@
 #   import_tasks: ./kubesetup/tasks/kube.yml 
 
 ---
-- name: Ensure swap is off
-  command: swapoff -a
-  become: true
+# - name: Ensure swap is off
+#   command: swapoff -a
+#   become: true
 
 - name: Create k8s.conf for modules load
   become: true
@@ -43,70 +43,87 @@
   command: sysctl --system
 
 # Crio Tasks
+- name: Update apt package index
+  apt:
+    update_cache: yes
 
-- name: Add CRI-O GPG key
-  become: true
-  apt_key:
-    url: https://pkgs.k8s.io/addons:/cri-o:/prerelease:/main/deb/Release.key
+- name: Install dependencies
+  apt:
+    name:
+      - software-properties-common
+      - curl
     state: present
 
+- name: Create directory for apt keyrings
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Download and install Kubernetes GPG key
+  get_url:
+    url: https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key
+    dest: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+    mode: '0644'
+
+- name: Add Kubernetes repository
+  copy:
+    dest: /etc/apt/sources.list.d/kubernetes.list
+    content: |
+      deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /
+
+- name: Download and install CRI-O GPG key
+  get_url:
+    url: https://pkgs.k8s.io/addons:/cri-o:/prerelease:/main/deb/Release.key
+    dest: /etc/apt/keyrings/cri-o-apt-keyring.gpg
+    mode: '0644'
+
 - name: Add CRI-O repository
-  become: true
   copy:
     dest: /etc/apt/sources.list.d/cri-o.list
     content: |
       deb [signed-by=/etc/apt/keyrings/cri-o-apt-keyring.gpg] https://pkgs.k8s.io/addons:/cri-o:/prerelease:/main/deb/ /
 
-- name: Update apt and install CRI-O
-  become: true
+- name: Update apt and install CRI-O and Kubernetes tools
   apt:
-    name: cri-o
+    name:
+      - cri-o
+      - kubelet
+      - kubeadm
+      - kubectl
     state: present
     update_cache: yes
 
+- name: Create kubelet systemd drop-in directory
+  file:
+    path: /etc/systemd/system/kubelet.service.d
+    state: directory
+    mode: '0755'
+
+- name: Configure kubelet systemd drop-in to use CRI-O
+  copy:
+    dest: /etc/systemd/system/kubelet.service.d/10-crio.conf
+    content: |
+      [Service]
+      Environment="KUBELET_EXTRA_ARGS=--container-runtime=remote --container-runtime-endpoint=unix:///var/run/crio/crio.sock --runtime-request-timeout=15m"
+
+- name: Reload systemd configuration
+  command: systemctl daemon-reload
+
 - name: Ensure CRI-O service is enabled and started
-  become: true
   systemd:
     name: crio
     enabled: yes
     state: started
 
-
-#kubetasks
-
-- name: Add Kubernetes GPG key
-  become: true
-  apt_key:
-    url: https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key
-    state: present
-
-- name: Add Kubernetes repository
-  become: true
-  copy:
-    dest: /etc/apt/sources.list.d/kubernetes.list
-    content: |
-      deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /
-
-- name: Ensure specific versions of Kubernetes tools are installed
-  become: true
-  apt:
-    name:
-      - kubelet=1.29.0-*
-      - kubectl=1.29.0-*
-      - kubeadm=1.29.0-*
-    state: present
-    update_cache: yes
+- name: Ensure kubelet service is enabled and started
+  systemd:
+    name: kubelet
+    enabled: yes
+    state: restarted
 
 - name: Install jq
-  become: true
   apt:
     name: jq
     state: present
     update_cache: yes
-
-- name: Ensure kubelet service is enabled and started
-  become: true
-  systemd:
-    name: kubelet
-    enabled: yes
-    state: started

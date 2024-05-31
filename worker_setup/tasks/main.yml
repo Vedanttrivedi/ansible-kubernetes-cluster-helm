@@ -1,6 +1,6 @@
 ---
 - name: Perform pre-flight checks
-  command: kubeadm reset pre-flight checks
+  command: kubeadm reset --cri-socket unix:///var/run/crio/crio.sock
   become: true
 
 - name: Retrieve the join command

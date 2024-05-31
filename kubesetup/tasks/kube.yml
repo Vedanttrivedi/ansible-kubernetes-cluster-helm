@@ -2,7 +2,7 @@
 - name: Add Kubernetes GPG key
   become: true
   apt_key:
-    url: https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key
+    url: https://dl.k8s.io/apt/doc/apt-key.gpg
     state: present
 
 - name: Add Kubernetes repository
@@ -16,9 +16,9 @@
   become: true
   apt:
     name:
-      - kubelet=1.29.0-*
+      - kubelet
       - kubectl=1.29.0-*
-      - kubeadm=1.29.0-*
+      - kubeadm
     state: present
     update_cache: yes
 
