@@ -1,0 +1,30 @@
+---
+- name: Add Docker GPG apt Key
+  apt_key:
+      url: https://download.docker.com/linux/ubuntu/gpg
+      state: present
+
+- name: Add Docker Repository
+  apt_repository:
+    repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+    state: present
+
+- name: Update apt and install docker-ce
+  apt:
+    name: docker-ce
+    state: latest
+
+- name: Install Docker Module for Python
+  pip:
+    name: docker
+
+- name: Debug Root user
+  debug:
+    msg: "echo  hii {{ ansible_user }}"
+
+
+# - name: Create Docker Group
+#   command: sudo newgrp docker
+
+- name: Add user to docker group
+  command: sudo usermod -aG docker {{ ansible_user }}

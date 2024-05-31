@@ -1,0 +1,27 @@
+---
+- name: Add CRI-O GPG key
+  become: true
+  apt_key:
+    url: https://pkgs.k8s.io/addons:/cri-o:/prerelease:/main/deb/Release.key
+    state: present
+
+- name: Add CRI-O repository
+  become: true
+  copy:
+    dest: /etc/apt/sources.list.d/cri-o.list
+    content: |
+      deb [signed-by=/etc/apt/keyrings/cri-o-apt-keyring.gpg] https://pkgs.k8s.io/addons:/cri-o:/prerelease:/main/deb/ /
+
+- name: Update apt and install CRI-O
+  become: true
+  apt:
+    name: cri-o
+    state: present
+    update_cache: yes
+
+- name: Ensure CRI-O service is enabled and started
+  become: true
+  systemd:
+    name: crio
+    enabled: yes
+    state: started

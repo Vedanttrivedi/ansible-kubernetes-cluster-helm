@@ -1,0 +1,50 @@
+---
+- name: Pull Kubernetes control plane images
+  command: kubeadm config images pull
+  become: true
+
+- name: Initialize the Kubernetes master node
+  command: kubeadm init --pod-network-cidr=192.168.0.0/16
+  become: true
+  register: kubeadm_init
+  changed_when: "'initialized' in kubeadm_init.stdout"
+
+- name: Create .kube directory
+  file:
+    path: "{{ lookup('env', 'HOME') }}/.kube"
+    state: directory
+    mode: '0755'
+  become: true
+
+- name: Copy admin.conf to user's kube config
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: "{{ lookup('env', 'HOME') }}/.kube/config"
+    remote_src: yes
+  become: true
+
+- name: Change ownership of kube config
+  file:
+    path: "{{ lookup('env', 'HOME') }}/.kube/config"
+    owner: "{{ lookup('env', 'USER') }}"
+    group: "{{ lookup('env', 'USER') }}"
+    mode: '0644'
+  become: true
+
+- name: Install Calico network plugin
+  command: kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.26.0/manifests/calico.yaml
+  become: true
+  environment:
+    KUBECONFIG: "{{ lookup('env', 'HOME') }}/.kube/config"
+
+- name: Generate join command
+  command: kubeadm token create --print-join-command
+  become: true
+  register: join_command
+  changed_when: false
+
+- name: Save join command to file
+  copy:
+    content: "{{ join_command.stdout }}"
+    dest: /tmp/kubeadm_join_command.txt
+  become: true

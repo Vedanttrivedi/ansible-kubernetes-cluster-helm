@@ -1,0 +1,28 @@
+- hosts: all
+  name: PlayBook to install docker and kubernetes
+  become: yes
+  become_method: sudo
+  roles:
+    - checkinstalls
+    - dockeres
+    - kubesetup
+
+
+- hosts: master
+  name: Setup master node
+  become: yes
+  become_method: sudo
+  roles:
+    - master_setup
+
+
+- hosts: worker
+  name: Setup worker node
+  become: yes
+  become_method: sudo
+  roles:
+    - worker_setup
+
+
+
+
