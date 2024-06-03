@@ -1,16 +1,16 @@
 ---
-- name: Add Kubernetes GPG key
-  become: true
-  apt_key:
-    url: https://dl.k8s.io/apt/doc/apt-key.gpg
-    state: present
-
 - name: Add Kubernetes repository
   become: true
   copy:
     dest: /etc/apt/sources.list.d/kubernetes.list
     content: |
-      deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /
+      deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /
+
+- name: Add Kubernetes GPG key
+  become: true
+  apt_key:
+    url: https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key
+    state: present
 
 - name: Ensure specific versions of Kubernetes tools are installed
   become: true

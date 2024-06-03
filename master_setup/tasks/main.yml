@@ -1,10 +1,16 @@
 ---
 - name: Pull Kubernetes control plane images
-  command: kubeadm config images pull
+  command: kubeadm config images pull --cri-socket=unix:///var/run/crio/crio.sock
   become: true
 
+- name: Reset the Kubernetes master node
+  command: kubeadm reset --cri-socket=unix:///var/run/crio/crio.sock
+  become: true
+  register: kubeadm_init
+
+
 - name: Initialize the Kubernetes master node
-  command: kubeadm init --pod-network-cidr=192.168.0.0/16
+  command: kubeadm init --cri-socket=unix:///var/run/crio/crio.sock
   become: true
   register: kubeadm_init
   changed_when: "'initialized' in kubeadm_init.stdout"

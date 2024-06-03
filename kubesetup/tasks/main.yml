@@ -53,24 +53,21 @@
       - software-properties-common
       - curl
     state: present
-
-- name: Create directory for apt keyrings
+- name: Ensure the /etc/apt/keyrings directory exists
   file:
     path: /etc/apt/keyrings
     state: directory
     mode: '0755'
 
-- name: Download and install Kubernetes GPG key
-  get_url:
-    url: https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key
+- name: Download Kubernetes APT repository GPG key
+  ansible.builtin.get_url:
+    url: https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key
     dest: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
-    mode: '0644'
 
-- name: Add Kubernetes repository
-  copy:
-    dest: /etc/apt/sources.list.d/kubernetes.list
-    content: |
-      deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg trusted=yes] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /
+- name: Add Kubernetes APT repository to sources list
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /"
+    filename: 'kubernetes.list'
 
 - name: Download and install CRI-O GPG key
   get_url:
@@ -84,13 +81,18 @@
     content: |
       deb [signed-by=/etc/apt/keyrings/cri-o-apt-keyring.gpg trusted=yes] https://pkgs.k8s.io/addons:/cri-o:/prerelease:/main/deb/ /
 
+- name: Download kubectl for Linux X64
+  get_url:
+    url: https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl
+    dest: /usr/local/bin/kubectl
+    mode: '0755'
+
 - name: Update apt and install CRI-O and Kubernetes tools
   apt:
     name:
       - cri-o
       - kubelet
       - kubeadm
-      - kubectl
     state: present
     update_cache: yes
 

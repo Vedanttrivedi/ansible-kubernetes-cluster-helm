@@ -51,3 +51,32 @@
 - name: Debug Root user
   debug:
     msg: "Hello, {{ ansible_user }}"
+
+- name: Ensure /etc/docker directory exists
+  file:
+    path: /etc/docker
+    state: directory
+    mode: '0755'
+
+- name: Create /etc/docker/daemon.json with Docker daemon configuration
+  copy:
+    dest: /etc/docker/daemon.json
+    content: |
+      {
+        "exec-opts": ["native.cgroupdriver=systemd"],
+        "log-driver": "json-file",
+        "log-opts": {
+          "max-size": "100m"
+        },
+        "storage-driver": "overlay2"
+      }
+
+- name: Enable Docker service
+  systemd:
+    name: docker
+    enabled: yes
+
+- name: Reload systemd daemon
+  command: systemctl daemon-reload
+  args:
+    warn: false
