@@ -62,7 +62,7 @@
 
 - name: Download and install Kubernetes GPG key
   get_url:
-    url: https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key
+    url: https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key
     dest: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
     mode: '0644'
 
@@ -70,7 +70,7 @@
   copy:
     dest: /etc/apt/sources.list.d/kubernetes.list
     content: |
-      deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /
+      deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg trusted=yes] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /
 
 - name: Download and install CRI-O GPG key
   get_url:
@@ -82,7 +82,7 @@
   copy:
     dest: /etc/apt/sources.list.d/cri-o.list
     content: |
-      deb [signed-by=/etc/apt/keyrings/cri-o-apt-keyring.gpg] https://pkgs.k8s.io/addons:/cri-o:/prerelease:/main/deb/ /
+      deb [signed-by=/etc/apt/keyrings/cri-o-apt-keyring.gpg trusted=yes] https://pkgs.k8s.io/addons:/cri-o:/prerelease:/main/deb/ /
 
 - name: Update apt and install CRI-O and Kubernetes tools
   apt:
