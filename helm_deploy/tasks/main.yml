@@ -1,36 +1,37 @@
----
-- name: Download Helm installation script
-  get_url:
-    url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+- name: Download get_helm.sh script
+  ansible.builtin.get_url:
+    url: "{{ helm_install_script_url }}"
     dest: /tmp/get_helm.sh
-    mode: '0755'
+    mode: '0700'
 
 - name: Install Helm
-  shell: /tmp/get_helm.sh
-  args:
-    executable: /bin/bash
+  ansible.builtin.command:
+    cmd: /tmp/get_helm.sh
 
-- name: Ensure helm is installed
-  command: helm version
-  register: helm_installed
-  failed_when: helm_installed.rc != 0
+- name: Verify Helm installation
+  ansible.builtin.command: helm version
+  register: helm_version
 
-- name: Add stable Helm repository
-  community.kubernetes.helm_repository:
-    name: stable
-    repo_url: https://charts.helm.sh/stable
-  when: helm_installed is succeeded
+- name: Display Helm version
+  ansible.builtin.debug:
+    msg: "{{ helm_version.stdout }}"
 
-- name: Update Helm repositories
-  community.kubernetes.helm_repository:
-    name: stable
-    repo_url: https://charts.helm.sh/stable
-    state: present
-  when: helm_installed is succeeded
+- name: Add helm repo
+  kubernetes.core.helm_repository:
+    name: "{{ helm_repo_name }}"
+    repo_url: "{{ helm_repo_url }}"
 
-- name: Deploy application using Helm chart
-  community.kubernetes.helm:
-    name: myapp
-    chart_ref: stable/mychart
-    release_namespace: default
-  when: inventory_hostname == groups['master'][0]  
+- name: Install Nginx Chart
+  kubernetes.core.helm:
+    name: "{{ helm_chart_name }}"
+    namespace: "{{ helm_chart_namespace }}"
+    chart_ref: "{{ helm_chart_ref }}"
+  environment:
+    KUBECONFIG: "{{ ansible_user_dir }}/.kube/config"
+
+- name: Gather information about nginx-server
+  kubernetes.core.helm_info:
+    name: "{{ helm_chart_name }}"
+    release_namespace: "{{ helm_chart_namespace }}"
+  environment:
+    KUBECONFIG: "{{ ansible_user_dir }}/.kube/config"

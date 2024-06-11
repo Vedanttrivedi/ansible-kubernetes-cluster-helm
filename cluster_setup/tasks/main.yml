@@ -1,0 +1,72 @@
+- name: Ensure swap is off
+  command:
+    cmd: swapoff -a
+  register: swapoff_result
+
+- name: Create .kube directory
+  file:
+    path: "{{ ansible_env.HOME }}/.kube"
+    state: directory
+    mode: '0755'
+
+- name: Copy Kubernetes admin config
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: "{{ ansible_env.HOME }}/.kube/config"
+    remote_src: yes
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_id }}"
+    mode: '0644'
+- name: Remove /etc/containerd/config.toml
+  file:
+    path: /etc/containerd/config.toml
+    state: absent
+
+- name: Restart containerd service
+  systemd:
+    name: containerd
+    state: restarted
+    enabled: yes
+
+
+- name: Perform pre-flight checks
+  command: kubeadm reset --force
+
+- name: Initialize Kubernetes master
+  command: kubeadm init --pod-network-cidr=10.244.0.0/16
+  register: kubeadm_init
+
+- name: Apply CNI
+  command: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+
+- name: Create token
+  command: kubeadm token create --print-join-command
+  register: token
+
+- name: Display the entire token output
+  debug:
+    var: token.stdout_lines
+
+- name: Display join command with adjusted slicing
+  debug:
+    msg: "{{ token.stdout_lines[0][0:-3] }}"
+  register: join_command_display
+
+- name: Ensure swap is off
+  command:
+    cmd: swapoff -a
+  delegate_to: "{{ item }}"
+  with_items: "{{ groups['worker'] }}" 
+
+- name: Perform pre-flight checks on worker nodes
+  command: kubeadm reset --force
+  delegate_to: "{{ item }}"
+  with_items: "{{ groups['worker'] }}"
+
+- name: Execute join command on worker nodes
+  command: "{{ join_command_display .msg}} --v=5"
+  delegate_to: "{{ item }}"
+  with_items: "{{ groups['worker'] }}"
+  become: true

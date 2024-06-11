@@ -5,4 +5,5 @@ packages_to_install:
   - software-properties-common
   - python3-pip
   - virtualenv
+  - tree
   - python3-setuptools

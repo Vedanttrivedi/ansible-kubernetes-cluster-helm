@@ -1,7 +1,30 @@
 ---
-# vars file for dockeres
+conflicting_packages:
+  - docker.io
+  - docker-doc
+  - docker-compose
+  - docker-compose-v2
+  - podman-docker
+  - containerd
+  - runc
 
-container_count: 4
-default_container_name: docker
-default_container_image: nginx
-default_container_command: sleep 1d
+docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin 
+  - docker-compose-plugin
+
+docker_gpg_key_url: "https://download.docker.com/linux/ubuntu/gpg"
+
+docker_apt_repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable"
+
+docker_daemon_config: |
+  {
+    "exec-opts": ["native.cgroupdriver=systemd"],
+    "log-driver": "json-file",
+    "log-opts": {
+      "max-size": "100m"
+    },
+    "storage-driver": "overlay2"
+  }

@@ -1,0 +1,7 @@
+
+helm_install_script_url: "https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3"
+helm_repo_name: "bitnami"
+helm_repo_url: "https://charts.bitnami.com/bitnami"
+helm_chart_name: "nginx-server"
+helm_chart_namespace: "default"
+helm_chart_ref: "bitnami/nginx"

@@ -7,26 +7,19 @@
     - dockeres
     - kubesetup
 
-
-- hosts: master
-  name: Setup master node
-  become: yes
+- name: Initialize Kubernetes on Master Node and Retrieve Join Command
+  hosts: master
+  become: true
   become_method: sudo
   roles:
-    - master_setup
+    - cluster_setup
 
 
-- hosts: worker
-  name: Setup worker node
-  become: yes
-  become_method: sudo
-  roles:
-    - worker_setup
-
-
-- hosts: master
-  name: Deploy application using Helm
-  become: yes
+- name: Deploy with helm
+  hosts: master
+  become: true
   become_method: sudo
   roles:
     - helm_deploy
+
+
